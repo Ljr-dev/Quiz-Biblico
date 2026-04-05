@@ -1,43 +1,107 @@
 body {
-  font-family: Arial;
-  background: #121212;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
   color: #fff;
   text-align: center;
+  margin: 0;
 }
 
 .container {
   max-width: 500px;
   margin: auto;
-  margin-top: 50px;
+  padding: 20px;
 }
 
+h1 {
+  margin-top: 20px;
+  font-size: 28px;
+}
+
+/* CARD */
 .card {
   background: #1e1e1e;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
   margin-top: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-.hidden {
-  display: none;
-}
-
-button {
-  background: #4CAF50;
+/* INPUTS */
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 16px;
+  border-radius: 8px;
   border: none;
-  padding: 10px;
-  margin-top: 10px;
+  outline: none;
+}
+
+/* BOTÕES */
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  background: #4CAF50;
   color: white;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  border-radius: 5px;
+  transition: 0.2s;
 }
 
 button:hover {
   background: #45a049;
+  transform: scale(1.02);
 }
 
-input, select {
+/* OPÇÕES */
+#options button {
+  background: #2a2a2a;
+  margin-top: 10px;
+}
+
+#options button:hover {
+  background: #4CAF50;
+}
+
+/* RANKING */
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  background: #2a2a2a;
   padding: 10px;
-  margin: 5px;
-  width: 90%;
+  margin: 5px 0;
+  border-radius: 6px;
+}
+
+/* HIDDEN */
+.hidden {
+  display: none;
+}
+
+/* 📱 MOBILE */
+@media (max-width: 480px) {
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  input, select {
+    font-size: 18px;
+    padding: 14px;
+  }
+
+  button {
+    font-size: 18px;
+    padding: 16px;
+  }
+
 }
