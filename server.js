@@ -8,72 +8,81 @@ app.use(express.static("public"));
 
 /* 🔹 PEGAR CATEGORIAS */
 app.get("/categories", (req, res) => {
-  try {
-    const rows = db.prepare("SELECT DISTINCT category FROM questions").all();
+  db.all("SELECT DISTINCT category FROM questions", (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Erro ao buscar categorias" });
+    }
+
     res.json(rows.map(r => r.category));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar categorias" });
-  }
+  });
 });
 
 /* 🔹 PEGAR PERGUNTAS POR CATEGORIA */
 app.get("/questions/:category", (req, res) => {
-  try {
-    const rows = db.prepare(`
-      SELECT * FROM questions
-      WHERE category = ?
-      ORDER BY RANDOM()
-      LIMIT 10
-    `).all(req.params.category);
+  const category = req.params.category;
 
-    const formatted = rows.map(q => ({
-      question: q.question,
-      options: [q.option1, q.option2, q.option3, q.option4],
-      correct: q.correct
-    }));
+  db.all(
+    `SELECT * FROM questions 
+     WHERE category = ? 
+     ORDER BY RANDOM() 
+     LIMIT 10`,
+    [category],
+    (err, rows) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Erro ao buscar perguntas" });
+      }
 
-    res.json(formatted);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar perguntas" });
-  }
+      const formatted = rows.map(q => ({
+        question: q.question,
+        options: [q.option1, q.option2, q.option3, q.option4],
+        correct: q.correct
+      }));
+
+      res.json(formatted);
+    }
+  );
 });
 
 /* 🔹 SALVAR SCORE */
 app.post("/save-score", (req, res) => {
-  try {
-    const { name, score } = req.body;
+  const { name, score } = req.body;
 
-    db.prepare(
-      "INSERT INTO ranking (name, score) VALUES (?, ?)"
-    ).run(name, score);
+  db.run(
+    "INSERT INTO ranking (name, score) VALUES (?, ?)",
+    [name, score],
+    function (err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Erro ao salvar score" });
+      }
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao salvar score" });
-  }
+      res.json({ success: true });
+    }
+  );
 });
 
 /* 🔹 RANKING */
 app.get("/ranking", (req, res) => {
-  try {
-    const rows = db.prepare(`
-      SELECT * FROM ranking
-      ORDER BY score DESC
-      LIMIT 10
-    `).all();
+  db.all(
+    `SELECT * FROM ranking 
+     ORDER BY score DESC 
+     LIMIT 10`,
+    (err, rows) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Erro ao buscar ranking" });
+      }
 
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar ranking" });
-  }
+      res.json(rows);
+    }
+  );
 });
 
+/* 🔹 START SERVER */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Rodando na porta " + PORT);
+  console.log("🚀 Rodando na porta " + PORT);
 });
