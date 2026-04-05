@@ -17,13 +17,26 @@ h1 {
   font-size: 28px;
 }
 
-/* CARD */
 .card {
   background: #1e1e1e;
   padding: 20px;
   border-radius: 12px;
   margin-top: 20px;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.hidden {
+  display: none;
+}
+
+/* TIMER */
+#timer-bar {
+  height: 8px;
+  background: #4CAF50;
+  width: 100%;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  transition: width 1s linear;
 }
 
 /* INPUTS */
@@ -34,7 +47,6 @@ input, select {
   font-size: 16px;
   border-radius: 8px;
   border: none;
-  outline: none;
 }
 
 /* BOTÕES */
@@ -72,18 +84,27 @@ ul {
 }
 
 li {
-  background: #2a2a2a;
   padding: 10px;
   margin: 5px 0;
   border-radius: 6px;
 }
 
-/* HIDDEN */
-.hidden {
-  display: none;
+li:nth-child(1) {
+  background: gold;
+  color: black;
 }
 
-/* 📱 MOBILE */
+li:nth-child(2) {
+  background: silver;
+  color: black;
+}
+
+li:nth-child(3) {
+  background: #cd7f32;
+  color: black;
+}
+
+/* MOBILE */
 @media (max-width: 480px) {
 
   h1 {
@@ -103,5 +124,4 @@ li {
     font-size: 18px;
     padding: 16px;
   }
-
 }

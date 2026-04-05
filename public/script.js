@@ -3,6 +3,10 @@ let score = 0;
 let questions = [];
 let playerName = "";
 
+let timeLeft = 10;
+let timerInterval;
+
+/* 🔹 CARREGAR CATEGORIAS */
 async function loadCategories(){
   const res = await fetch("/categories");
   const data = await res.json();
@@ -19,6 +23,7 @@ async function loadCategories(){
 
 loadCategories();
 
+/* 🔹 INICIAR JOGO */
 async function startGame(){
   playerName = document.getElementById("name").value;
   const category = document.getElementById("category").value;
@@ -32,7 +37,30 @@ async function startGame(){
   loadQuestion();
 }
 
+/* 🔹 TIMER */
+function startTimer() {
+  const bar = document.getElementById("timer-bar");
+
+  timeLeft = 10;
+  bar.style.width = "100%";
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+
+    bar.style.width = (timeLeft * 10) + "%";
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      current++;
+      loadQuestion();
+    }
+
+  }, 1000);
+}
+
+/* 🔹 CARREGAR PERGUNTA */
 function loadQuestion(){
+
   const q = questions[current];
 
   if(!q){
@@ -51,18 +79,41 @@ function loadQuestion(){
     btn.onclick = () => answer(index, q.correct);
     optionsDiv.appendChild(btn);
   });
+
+  startTimer();
 }
 
+/* 🔹 RESPONDER */
 function answer(selected, correct){
+
+  clearInterval(timerInterval);
+
+  const buttons = document.querySelectorAll("#options button");
+
+  buttons.forEach((btn, index) => {
+
+    if (index === correct) {
+      btn.style.background = "green";
+    } else if (index === selected) {
+      btn.style.background = "red";
+    }
+
+    btn.disabled = true;
+  });
+
   if(selected === correct){
     score += 10;
   }
 
-  current++;
-  loadQuestion();
+  setTimeout(() => {
+    current++;
+    loadQuestion();
+  }, 1000);
 }
 
+/* 🔹 FINALIZAR */
 async function finishGame(){
+
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("result").classList.remove("hidden");
 
@@ -80,9 +131,16 @@ async function finishGame(){
   const list = document.getElementById("ranking");
   list.innerHTML = "";
 
-  ranking.forEach(p => {
+  ranking.forEach((p, index) => {
+
+    let medal = "";
+    if(index === 0) medal = "🥇";
+    else if(index === 1) medal = "🥈";
+    else if(index === 2) medal = "🥉";
+
     const li = document.createElement("li");
-    li.innerText = `${p.name} - ${p.score}`;
+    li.innerText = `${medal} ${p.name} - ${p.score}`;
+
     list.appendChild(li);
   });
 }
