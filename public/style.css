@@ -14,7 +14,6 @@ body {
 
 h1 {
   margin-top: 20px;
-  font-size: 28px;
 }
 
 .card {
@@ -22,14 +21,19 @@ h1 {
   padding: 20px;
   border-radius: 12px;
   margin-top: 20px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
 .hidden {
   display: none;
 }
 
-/* ❤️ VIDAS */
+/* 👤 */
+#user-info {
+  margin-bottom: 10px;
+  color: #ccc;
+}
+
+/* ❤️ */
 .lives {
   font-size: 24px;
   margin-bottom: 10px;
@@ -41,8 +45,6 @@ h1 {
   background: #4CAF50;
   width: 100%;
   margin-bottom: 15px;
-  border-radius: 5px;
-  transition: width 1s linear;
 }
 
 /* INPUT */
@@ -50,7 +52,6 @@ input {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
-  font-size: 16px;
   border-radius: 8px;
   border: none;
 }
@@ -59,12 +60,12 @@ input {
 button {
   width: 100%;
   padding: 14px;
-  font-size: 16px;
   background: #4CAF50;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  margin-top: 5px;
 }
 
 button:hover {
@@ -74,7 +75,6 @@ button:hover {
 /* OPÇÕES */
 #options button {
   background: #2a2a2a;
-  margin-top: 10px;
 }
 
 #options button:hover {
@@ -87,33 +87,16 @@ ul {
   padding: 0;
 }
 
-li {
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 6px;
-}
+li:nth-child(1) { background: gold; color: black; }
+li:nth-child(2) { background: silver; color: black; }
+li:nth-child(3) { background: #cd7f32; color: black; }
 
-li:nth-child(1) {
-  background: gold;
-  color: black;
-}
-
-li:nth-child(2) {
-  background: silver;
-  color: black;
-}
-
-li:nth-child(3) {
-  background: #cd7f32;
-  color: black;
-}
-
-/* WHATSAPP */
+/* WHATS */
 .btn-whatsapp {
   background: #25D366;
-  margin-top: 10px;
 }
 
-.btn-whatsapp:hover {
-  background: #1ebe5d;
+/* LOGOUT */
+.btn-logout {
+  background: #ff4d4d;
 }

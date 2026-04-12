@@ -16,10 +16,18 @@
   <div id="start" class="card">
     <input id="name" placeholder="Digite seu nome" />
     <button onclick="startGame()">Começar</button>
+
+    <button onclick="logout()" class="btn-logout">
+      Trocar usuário
+    </button>
   </div>
 
   <!-- QUIZ -->
   <div id="quiz" class="card hidden">
+
+    <!-- 👤 USUÁRIO -->
+    <div id="user-info"></div>
+
     <div id="timer-bar"></div>
 
     <!-- ❤️ VIDAS -->

@@ -8,19 +8,34 @@ let timerInterval;
 
 let lives = 3;
 
-/* 🔹 ATUALIZAR VIDAS */
-function updateLives(){
-  const livesDiv = document.getElementById("lives");
+/* 🔹 AUTO LOGIN */
+window.onload = async () => {
 
-  let hearts = "";
+  const savedName = localStorage.getItem("playerName");
 
-  for(let i = 0; i < lives; i++){
-    hearts += "❤️ ";
+  if(savedName){
+    playerName = savedName;
+
+    document.getElementById("start").classList.add("hidden");
+    document.getElementById("quiz").classList.remove("hidden");
+
+    startGameAuto();
   }
+};
 
-  livesDiv.innerText = hearts;
+/* 🔹 INICIAR AUTOMÁTICO */
+async function startGameAuto(){
+  const res = await fetch("/quiz");
+  questions = await res.json();
 
-  livesDiv.style.color = lives === 1 ? "red" : "white";
+  current = 0;
+  score = 0;
+  lives = 3;
+
+  updateLives();
+  updateUserInfo();
+
+  loadQuestion();
 }
 
 /* 🔹 INICIAR JOGO */
@@ -33,25 +48,43 @@ async function startGame(){
     return;
   }
 
-  try {
-    const res = await fetch("/quiz");
-    questions = await res.json();
+  localStorage.setItem("playerName", playerName);
 
-    current = 0;
-    score = 0;
-    lives = 3;
+  const res = await fetch("/quiz");
+  questions = await res.json();
 
-    updateLives();
+  current = 0;
+  score = 0;
+  lives = 3;
 
-    document.getElementById("start").classList.add("hidden");
-    document.getElementById("quiz").classList.remove("hidden");
+  updateLives();
+  updateUserInfo();
 
-    loadQuestion();
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
 
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao iniciar o jogo");
+  loadQuestion();
+}
+
+/* 🔹 USUÁRIO */
+function updateUserInfo(){
+  const div = document.getElementById("user-info");
+  const best = localStorage.getItem("bestScore") || 0;
+
+  div.innerText = `👋 ${playerName} | 🏆 Melhor: ${best}`;
+}
+
+/* 🔹 VIDAS */
+function updateLives(){
+  const livesDiv = document.getElementById("lives");
+
+  let hearts = "";
+  for(let i = 0; i < lives; i++){
+    hearts += "❤️ ";
   }
+
+  livesDiv.innerText = hearts;
+  livesDiv.style.color = lives === 1 ? "red" : "white";
 }
 
 /* 🔹 TIMER */
@@ -84,7 +117,7 @@ function startTimer() {
   }, 1000);
 }
 
-/* 🔹 CARREGAR PERGUNTA */
+/* 🔹 PERGUNTA */
 function loadQuestion(){
 
   const q = questions[current];
@@ -99,7 +132,6 @@ function loadQuestion(){
   const optionsDiv = document.getElementById("options");
   optionsDiv.innerHTML = "";
 
-  // 🔥 EMBARALHAR OPÇÕES
   const shuffled = q.options.map((opt, index) => ({
     text: opt,
     isCorrect: index === q.correct
@@ -125,7 +157,6 @@ function answer(isCorrect, clickedBtn){
   buttons.forEach(btn => {
     btn.disabled = true;
 
-    // marcar correta
     if(btn.innerText === questions[current].options[questions[current].correct]){
       btn.style.background = "green";
     }
@@ -151,13 +182,19 @@ function answer(isCorrect, clickedBtn){
   }, 1000);
 }
 
-/* 🔹 FINALIZAR */
+/* 🔹 FINAL */
 async function finishGame(){
 
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("result").classList.remove("hidden");
 
   document.getElementById("score").innerText = `Pontuação: ${score}`;
+
+  // 🔥 salvar melhor score
+  let best = localStorage.getItem("bestScore") || 0;
+  if(score > best){
+    localStorage.setItem("bestScore", score);
+  }
 
   try {
     await fetch("/save-score", {
@@ -188,6 +225,13 @@ async function finishGame(){
   } catch (err) {
     console.error(err);
   }
+}
+
+/* 🔹 LOGOUT */
+function logout(){
+  localStorage.removeItem("playerName");
+  localStorage.removeItem("bestScore");
+  location.reload();
 }
 
 /* 🔹 WHATSAPP */
