@@ -197,8 +197,7 @@ async function finishGame(){
 /* 🔹 WHATSAPP */
 function compartilharWhatsApp() {
 
-  const mensagem = `🔥 Eu fiz ${score} pontos no Quiz Bíblico!\n\n😱 Duvido você bater minha pontuação!\n👉 Jogue aqui: http://localhost:3000`;
-
+  const mensagem = `🔥 Eu fiz ${score} pontos no Quiz Bíblico!\n\n😱 Duvido você bater minha pontuação!\n👉 Jogue aqui: ${window.location.origin}`;
   const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
 
   window.open(url, '_blank');
