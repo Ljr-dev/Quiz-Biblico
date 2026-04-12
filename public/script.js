@@ -20,11 +20,7 @@ function updateLives(){
 
   livesDiv.innerText = hearts;
 
-  if(lives === 1){
-    livesDiv.style.color = "red";
-  } else {
-    livesDiv.style.color = "white";
-  }
+  livesDiv.style.color = lives === 1 ? "red" : "white";
 }
 
 /* 🔹 INICIAR JOGO */
@@ -103,48 +99,48 @@ function loadQuestion(){
   const optionsDiv = document.getElementById("options");
   optionsDiv.innerHTML = "";
 
-  q.options.forEach((opt, index) => {
+  // 🔥 EMBARALHAR OPÇÕES
+  const shuffled = q.options.map((opt, index) => ({
+    text: opt,
+    isCorrect: index === q.correct
+  })).sort(() => Math.random() - 0.5);
 
-    if(opt){
-      const btn = document.createElement("button");
-      btn.innerText = opt;
-      btn.onclick = () => answer(index, q.correct);
-      optionsDiv.appendChild(btn);
-    }
-
+  shuffled.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.innerText = opt.text;
+    btn.onclick = () => answer(opt.isCorrect, btn);
+    optionsDiv.appendChild(btn);
   });
 
   startTimer();
 }
 
 /* 🔹 RESPONDER */
-function answer(selected, correct){
+function answer(isCorrect, clickedBtn){
 
   clearInterval(timerInterval);
 
   const buttons = document.querySelectorAll("#options button");
 
-  buttons.forEach((btn, index) => {
-
-    if (index === correct) {
-      btn.style.background = "green";
-    } else if (index === selected) {
-      btn.style.background = "red";
-    }
-
+  buttons.forEach(btn => {
     btn.disabled = true;
+
+    // marcar correta
+    if(btn.innerText === questions[current].options[questions[current].correct]){
+      btn.style.background = "green";
+    }
   });
 
-  if(selected === correct){
+  if(isCorrect){
     score += 10;
   } else {
+    clickedBtn.style.background = "red";
+
     lives--;
     updateLives();
 
     if(lives <= 0){
-      setTimeout(() => {
-        finishGame();
-      }, 1000);
+      setTimeout(() => finishGame(), 1000);
       return;
     }
   }
@@ -198,6 +194,7 @@ async function finishGame(){
 function compartilharWhatsApp() {
 
   const mensagem = `🔥 Eu fiz ${score} pontos no Quiz Bíblico!\n\n😱 Duvido você bater minha pontuação!\n👉 Jogue aqui: ${window.location.origin}`;
+
   const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
 
   window.open(url, '_blank');
