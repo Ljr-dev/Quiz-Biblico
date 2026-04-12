@@ -6,35 +6,56 @@ let playerName = "";
 let timeLeft = 10;
 let timerInterval;
 
-/* 🔹 CARREGAR CATEGORIAS */
-async function loadCategories(){
-  const res = await fetch("/categories");
-  const data = await res.json();
+let lives = 3;
 
-  const select = document.getElementById("category");
+/* 🔹 ATUALIZAR VIDAS */
+function updateLives(){
+  const livesDiv = document.getElementById("lives");
 
-  data.forEach(cat => {
-    const option = document.createElement("option");
-    option.value = cat;
-    option.innerText = cat;
-    select.appendChild(option);
-  });
+  let hearts = "";
+
+  for(let i = 0; i < lives; i++){
+    hearts += "❤️ ";
+  }
+
+  livesDiv.innerText = hearts;
+
+  if(lives === 1){
+    livesDiv.style.color = "red";
+  } else {
+    livesDiv.style.color = "white";
+  }
 }
-
-loadCategories();
 
 /* 🔹 INICIAR JOGO */
 async function startGame(){
+
   playerName = document.getElementById("name").value;
-  const category = document.getElementById("category").value;
 
-  const res = await fetch(`/questions/${category}`);
-  questions = await res.json();
+  if(!playerName){
+    alert("Digite seu nome");
+    return;
+  }
 
-  document.getElementById("start").classList.add("hidden");
-  document.getElementById("quiz").classList.remove("hidden");
+  try {
+    const res = await fetch("/quiz");
+    questions = await res.json();
 
-  loadQuestion();
+    current = 0;
+    score = 0;
+    lives = 3;
+
+    updateLives();
+
+    document.getElementById("start").classList.add("hidden");
+    document.getElementById("quiz").classList.remove("hidden");
+
+    loadQuestion();
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao iniciar o jogo");
+  }
 }
 
 /* 🔹 TIMER */
@@ -51,6 +72,15 @@ function startTimer() {
 
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
+
+      lives--;
+      updateLives();
+
+      if(lives <= 0){
+        finishGame();
+        return;
+      }
+
       current++;
       loadQuestion();
     }
@@ -74,10 +104,14 @@ function loadQuestion(){
   optionsDiv.innerHTML = "";
 
   q.options.forEach((opt, index) => {
-    const btn = document.createElement("button");
-    btn.innerText = opt;
-    btn.onclick = () => answer(index, q.correct);
-    optionsDiv.appendChild(btn);
+
+    if(opt){
+      const btn = document.createElement("button");
+      btn.innerText = opt;
+      btn.onclick = () => answer(index, q.correct);
+      optionsDiv.appendChild(btn);
+    }
+
   });
 
   startTimer();
@@ -103,6 +137,16 @@ function answer(selected, correct){
 
   if(selected === correct){
     score += 10;
+  } else {
+    lives--;
+    updateLives();
+
+    if(lives <= 0){
+      setTimeout(() => {
+        finishGame();
+      }, 1000);
+      return;
+    }
   }
 
   setTimeout(() => {
@@ -119,28 +163,43 @@ async function finishGame(){
 
   document.getElementById("score").innerText = `Pontuação: ${score}`;
 
-  await fetch("/save-score", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ name: playerName, score })
-  });
+  try {
+    await fetch("/save-score", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ name: playerName, score })
+    });
 
-  const res = await fetch("/ranking");
-  const ranking = await res.json();
+    const res = await fetch("/ranking");
+    const ranking = await res.json();
 
-  const list = document.getElementById("ranking");
-  list.innerHTML = "";
+    const list = document.getElementById("ranking");
+    list.innerHTML = "";
 
-  ranking.forEach((p, index) => {
+    ranking.forEach((p, index) => {
 
-    let medal = "";
-    if(index === 0) medal = "🥇";
-    else if(index === 1) medal = "🥈";
-    else if(index === 2) medal = "🥉";
+      let medal = "";
+      if(index === 0) medal = "🥇";
+      else if(index === 1) medal = "🥈";
+      else if(index === 2) medal = "🥉";
 
-    const li = document.createElement("li");
-    li.innerText = `${medal} ${p.name} - ${p.score}`;
+      const li = document.createElement("li");
+      li.innerText = `${medal} ${p.name} - ${p.score}`;
 
-    list.appendChild(li);
-  });
+      list.appendChild(li);
+    });
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/* 🔹 WHATSAPP */
+function compartilharWhatsApp() {
+
+  const mensagem = `🔥 Eu fiz ${score} pontos no Quiz Bíblico!\n\n😱 Duvido você bater minha pontuação!\n👉 Jogue aqui: http://localhost:3000`;
+
+  const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+
+  window.open(url, '_blank');
 }

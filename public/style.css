@@ -29,6 +29,12 @@ h1 {
   display: none;
 }
 
+/* ❤️ VIDAS */
+.lives {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
 /* TIMER */
 #timer-bar {
   height: 8px;
@@ -39,8 +45,8 @@ h1 {
   transition: width 1s linear;
 }
 
-/* INPUTS */
-input, select {
+/* INPUT */
+input {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
@@ -59,12 +65,10 @@ button {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: 0.2s;
 }
 
 button:hover {
   background: #45a049;
-  transform: scale(1.02);
 }
 
 /* OPÇÕES */
@@ -104,24 +108,12 @@ li:nth-child(3) {
   color: black;
 }
 
-/* MOBILE */
-@media (max-width: 480px) {
+/* WHATSAPP */
+.btn-whatsapp {
+  background: #25D366;
+  margin-top: 10px;
+}
 
-  h1 {
-    font-size: 22px;
-  }
-
-  .card {
-    padding: 15px;
-  }
-
-  input, select {
-    font-size: 18px;
-    padding: 14px;
-  }
-
-  button {
-    font-size: 18px;
-    padding: 16px;
-  }
+.btn-whatsapp:hover {
+  background: #1ebe5d;
 }

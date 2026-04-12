@@ -6,43 +6,64 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-/* 🔹 PEGAR CATEGORIAS */
-app.get("/categories", (req, res) => {
-  db.all("SELECT DISTINCT category FROM questions", (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: "Erro ao buscar categorias" });
-    }
-
-    res.json(rows.map(r => r.category));
+/* 🔹 FUNÇÃO PROMISE PRA SQLITE */
+function query(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
   });
-});
+}
 
-/* 🔹 PEGAR PERGUNTAS POR CATEGORIA */
-app.get("/questions/:category", (req, res) => {
-  const category = req.params.category;
+/* 🔹 QUIZ COMPLETO (PROGRESSIVO) */
+app.get("/quiz", async (req, res) => {
+  try {
 
-  db.all(
-    `SELECT * FROM questions 
-     WHERE category = ? 
-     ORDER BY RANDOM() 
-     LIMIT 10`,
-    [category],
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro ao buscar perguntas" });
-      }
+    // 🔹 FÁCIL (10)
+    const faceis = await query(`
+      SELECT * FROM questions
+      WHERE category = 'facil'
+      ORDER BY RANDOM()
+      LIMIT 10
+    `);
 
-      const formatted = rows.map(q => ({
-        question: q.question,
-        options: [q.option1, q.option2, q.option3, q.option4],
-        correct: q.correct
-      }));
+    // 🔹 MÉDIO (15)
+    const medias = await query(`
+      SELECT * FROM questions
+      WHERE category = 'medio'
+      ORDER BY RANDOM()
+      LIMIT 15
+    `);
 
-      res.json(formatted);
-    }
-  );
+    // 🔹 DIFÍCIL (TODAS)
+    const dificeis = await query(`
+      SELECT * FROM questions
+      WHERE category = 'dificil'
+      ORDER BY RANDOM()
+    `);
+
+    // 🔹 JUNTA TUDO
+    const todas = [...faceis, ...medias, ...dificeis];
+
+    // 🔹 FORMATA PRO FRONT
+    const formatted = todas.map(q => ({
+      question: q.question,
+      options: [
+        q.option1,
+        q.option2,
+        q.option3,
+        q.option4
+      ],
+      correct: q.correct
+    }));
+
+    res.json(formatted);
+
+  } catch (err) {
+    console.error("Erro no quiz:", err);
+    res.status(500).json({ error: "Erro ao montar quiz" });
+  }
 });
 
 /* 🔹 SALVAR SCORE */
@@ -54,7 +75,7 @@ app.post("/save-score", (req, res) => {
     [name, score],
     function (err) {
       if (err) {
-        console.error(err);
+        console.error("Erro ao salvar score:", err);
         return res.status(500).json({ error: "Erro ao salvar score" });
       }
 
@@ -66,18 +87,23 @@ app.post("/save-score", (req, res) => {
 /* 🔹 RANKING */
 app.get("/ranking", (req, res) => {
   db.all(
-    `SELECT * FROM ranking 
-     ORDER BY score DESC 
+    `SELECT * FROM ranking
+     ORDER BY score DESC
      LIMIT 10`,
     (err, rows) => {
       if (err) {
-        console.error(err);
+        console.error("Erro ao buscar ranking:", err);
         return res.status(500).json({ error: "Erro ao buscar ranking" });
       }
 
       res.json(rows);
     }
   );
+});
+
+/* 🔹 TESTE */
+app.get("/", (req, res) => {
+  res.send("Servidor do Quiz rodando 🚀");
 });
 
 /* 🔹 START SERVER */
