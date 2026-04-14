@@ -5,25 +5,19 @@ let playerName = "";
 
 let timeLeft = 10;
 let timerInterval;
-
 let lives = 3;
 
-/* 🔹 AUTO LOGIN */
 window.onload = async () => {
-
   const savedName = localStorage.getItem("playerName");
 
   if(savedName){
     playerName = savedName;
-
     document.getElementById("start").classList.add("hidden");
     document.getElementById("quiz").classList.remove("hidden");
-
     startGameAuto();
   }
 };
 
-/* 🔹 INICIAR AUTOMÁTICO */
 async function startGameAuto(){
   const res = await fetch("/quiz");
   questions = await res.json();
@@ -34,13 +28,10 @@ async function startGameAuto(){
 
   updateLives();
   updateUserInfo();
-
   loadQuestion();
 }
 
-/* 🔹 INICIAR JOGO */
 async function startGame(){
-
   playerName = document.getElementById("name").value;
 
   if(!playerName){
@@ -66,28 +57,21 @@ async function startGame(){
   loadQuestion();
 }
 
-/* 🔹 USUÁRIO */
 function updateUserInfo(){
   const div = document.getElementById("user-info");
   const best = localStorage.getItem("bestScore") || 0;
-
   div.innerText = `👋 ${playerName} | 🏆 Melhor: ${best}`;
 }
 
-/* 🔹 VIDAS */
 function updateLives(){
   const livesDiv = document.getElementById("lives");
 
   let hearts = "";
-  for(let i = 0; i < lives; i++){
-    hearts += "❤️ ";
-  }
+  for(let i = 0; i < lives; i++) hearts += "❤️ ";
 
   livesDiv.innerText = hearts;
-  livesDiv.style.color = lives === 1 ? "red" : "white";
 }
 
-/* 🔹 TIMER */
 function startTimer() {
   const bar = document.getElementById("timer-bar");
 
@@ -96,7 +80,6 @@ function startTimer() {
 
   timerInterval = setInterval(() => {
     timeLeft--;
-
     bar.style.width = (timeLeft * 10) + "%";
 
     if (timeLeft <= 0) {
@@ -113,13 +96,10 @@ function startTimer() {
       current++;
       loadQuestion();
     }
-
   }, 1000);
 }
 
-/* 🔹 PERGUNTA */
 function loadQuestion(){
-
   const q = questions[current];
 
   if(!q){
@@ -147,22 +127,14 @@ function loadQuestion(){
   startTimer();
 }
 
-/* 🔹 RESPONDER */
 function answer(isCorrect, clickedBtn){
-
   clearInterval(timerInterval);
 
   const buttons = document.querySelectorAll("#options button");
-
-  buttons.forEach(btn => {
-    btn.disabled = true;
-
-    if(btn.innerText === questions[current].options[questions[current].correct]){
-      btn.style.background = "green";
-    }
-  });
+  buttons.forEach(btn => btn.disabled = true);
 
   if(isCorrect){
+    clickedBtn.style.background = "green";
     score += 10;
   } else {
     clickedBtn.style.background = "red";
@@ -182,64 +154,48 @@ function answer(isCorrect, clickedBtn){
   }, 1000);
 }
 
-/* 🔹 FINAL */
 async function finishGame(){
-
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("result").classList.remove("hidden");
 
   document.getElementById("score").innerText = `Pontuação: ${score}`;
 
-  // 🔥 salvar melhor score
   let best = localStorage.getItem("bestScore") || 0;
   if(score > best){
     localStorage.setItem("bestScore", score);
   }
 
-  try {
-    await fetch("/save-score", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ name: playerName, score })
-    });
+  await fetch("/save-score", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ name: playerName, score })
+  });
 
-    const res = await fetch("/ranking");
-    const ranking = await res.json();
+  const res = await fetch("/ranking");
+  const ranking = await res.json();
 
-    const list = document.getElementById("ranking");
-    list.innerHTML = "";
+  const list = document.getElementById("ranking");
+  list.innerHTML = "";
 
-    ranking.forEach((p, index) => {
+  ranking.forEach((p, index) => {
+    let medal = "";
+    if(index === 0) medal = "🥇";
+    else if(index === 1) medal = "🥈";
+    else if(index === 2) medal = "🥉";
 
-      let medal = "";
-      if(index === 0) medal = "🥇";
-      else if(index === 1) medal = "🥈";
-      else if(index === 2) medal = "🥉";
-
-      const li = document.createElement("li");
-      li.innerText = `${medal} ${p.name} - ${p.score}`;
-
-      list.appendChild(li);
-    });
-
-  } catch (err) {
-    console.error(err);
-  }
+    const li = document.createElement("li");
+    li.innerText = `${medal} ${p.name} - ${p.score}`;
+    list.appendChild(li);
+  });
 }
 
-/* 🔹 LOGOUT */
 function logout(){
-  localStorage.removeItem("playerName");
-  localStorage.removeItem("bestScore");
+  localStorage.clear();
   location.reload();
 }
 
-/* 🔹 WHATSAPP */
 function compartilharWhatsApp() {
-
-  const mensagem = `🔥 Eu fiz ${score} pontos no Quiz Bíblico!\n\n😱 Duvido você bater minha pontuação!\n👉 Jogue aqui: ${window.location.origin}`;
-
+  const mensagem = `🔥 Eu fiz ${score} pontos no Quiz Bíblico!\n👉 ${window.location.origin}`;
   const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
-
   window.open(url, '_blank');
 }
