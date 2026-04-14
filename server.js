@@ -6,6 +6,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
+/* 🔹 FUNÇÃO PROMISE SQLITE */
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
@@ -15,7 +16,13 @@ function query(sql, params = []) {
   });
 }
 
-// QUIZ
+/* 🔒 GARANTIR NOME ÚNICO NO BANCO */
+db.run(`
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_name
+  ON ranking(name)
+`);
+
+/* 🔹 QUIZ */
 app.get("/quiz", async (req, res) => {
   try {
     const faceis = await query(`
@@ -42,58 +49,120 @@ app.get("/quiz", async (req, res) => {
 
     const formatted = todas.map(q => ({
       question: q.question,
-      options: [q.option1, q.option2, q.option3, q.option4],
+      options: [
+        q.option1,
+        q.option2,
+        q.option3,
+        q.option4
+      ],
       correct: q.correct
     }));
 
     res.json(formatted);
+
   } catch (err) {
+    console.error("Erro no quiz:", err);
     res.status(500).json({ error: "Erro ao montar quiz" });
   }
 });
 
-// SALVAR SCORE (mantém só o melhor)
+/* 🔒 LOGIN (NOME ÚNICO) */
+app.post("/login", (req, res) => {
+  const { name } = req.body;
+
+  if (!name || name.trim() === "") {
+    return res.status(400).json({
+      success: false,
+      message: "Nome inválido"
+    });
+  }
+
+  db.get(
+    "SELECT 1 FROM ranking WHERE name = ?",
+    [name],
+    (err, row) => {
+      if (err) {
+        console.error("Erro no login:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Erro no servidor"
+        });
+      }
+
+      if (row) {
+        return res.json({
+          success: false,
+          message: "Nome já está em uso"
+        });
+      }
+
+      res.json({ success: true });
+    }
+  );
+});
+
+/* 🔹 SALVAR SCORE (PROTEGIDO) */
 app.post("/save-score", (req, res) => {
   const { name, score } = req.body;
 
-  db.get("SELECT * FROM ranking WHERE name = ?", [name], (err, row) => {
-    if (err) return res.status(500).json({ error: "Erro" });
+  db.run(
+    "INSERT INTO ranking (name, score) VALUES (?, ?)",
+    [name, score],
+    function (err) {
 
-    if (!row) {
-      db.run(
-        "INSERT INTO ranking (name, score) VALUES (?, ?)",
-        [name, score],
-        () => res.json({ success: true })
-      );
-    } else if (score > row.score) {
-      db.run(
-        "UPDATE ranking SET score = ? WHERE name = ?",
-        [score, name],
-        () => res.json({ success: true })
-      );
-    } else {
+      if (err) {
+        console.error("Erro ao salvar score:", err);
+
+        // 🔒 erro de nome duplicado
+        if (err.message.includes("UNIQUE")) {
+          return res.status(400).json({
+            success: false,
+            message: "Nome já está em uso"
+          });
+        }
+
+        return res.status(500).json({
+          success: false,
+          message: "Erro ao salvar score"
+        });
+      }
+
       res.json({ success: true });
     }
-  });
+  );
 });
 
-// RANKING (sem duplicados)
+/* 🔹 RANKING (SEM DUPLICADOS VISUAIS) */
 app.get("/ranking", (req, res) => {
-  db.all(`
+  db.all(
+    `
     SELECT name, MAX(score) as score
     FROM ranking
     GROUP BY name
     ORDER BY score DESC
     LIMIT 10
-  `, (err, rows) => {
-    if (err) return res.status(500).json({ error: "Erro" });
-    res.json(rows);
-  });
+    `,
+    (err, rows) => {
+      if (err) {
+        console.error("Erro ao buscar ranking:", err);
+        return res.status(500).json({
+          error: "Erro ao buscar ranking"
+        });
+      }
+
+      res.json(rows);
+    }
+  );
 });
 
+/* 🔹 TESTE */
 app.get("/", (req, res) => {
-  res.send("Servidor rodando 🚀");
+  res.send("🚀 Servidor do Quiz rodando");
 });
 
+/* 🔹 START SERVER */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Rodando na porta " + PORT));
+
+app.listen(PORT, () => {
+  console.log("🚀 Rodando na porta " + PORT);
+});
