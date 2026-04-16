@@ -16,12 +16,6 @@ function query(sql, params = []) {
   });
 }
 
-/* 🔒 GARANTIR NOME ÚNICO NO BANCO */
-db.run(`
-  CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_name
-  ON ranking(name)
-`);
-
 /* 🔹 QUIZ */
 app.get("/quiz", async (req, res) => {
   try {
@@ -66,7 +60,7 @@ app.get("/quiz", async (req, res) => {
   }
 });
 
-/* 🔒 LOGIN (NOME ÚNICO) */
+/* 🔹 LOGIN (APENAS VALIDA NOME) */
 app.post("/login", (req, res) => {
   const { name } = req.body;
 
@@ -77,33 +71,19 @@ app.post("/login", (req, res) => {
     });
   }
 
-  db.get(
-    "SELECT 1 FROM ranking WHERE name = ?",
-    [name],
-    (err, row) => {
-      if (err) {
-        console.error("Erro no login:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Erro no servidor"
-        });
-      }
-
-      if (row) {
-        return res.json({
-          success: false,
-          message: "Nome já está em uso"
-        });
-      }
-
-      res.json({ success: true });
-    }
-  );
+  res.json({ success: true });
 });
 
-/* 🔹 SALVAR SCORE (PROTEGIDO) */
+/* 🔹 SALVAR SCORE (AGORA PERMITE VÁRIAS TENTATIVAS) */
 app.post("/save-score", (req, res) => {
   const { name, score } = req.body;
+
+  if (!name || score === undefined) {
+    return res.status(400).json({
+      success: false,
+      message: "Dados inválidos"
+    });
+  }
 
   db.run(
     "INSERT INTO ranking (name, score) VALUES (?, ?)",
@@ -112,15 +92,6 @@ app.post("/save-score", (req, res) => {
 
       if (err) {
         console.error("Erro ao salvar score:", err);
-
-        // 🔒 erro de nome duplicado
-        if (err.message.includes("UNIQUE")) {
-          return res.status(400).json({
-            success: false,
-            message: "Nome já está em uso"
-          });
-        }
-
         return res.status(500).json({
           success: false,
           message: "Erro ao salvar score"
@@ -132,7 +103,7 @@ app.post("/save-score", (req, res) => {
   );
 });
 
-/* 🔹 RANKING (SEM DUPLICADOS VISUAIS) */
+/* 🔥 RANKING (PEGANDO MELHOR SCORE REAL) */
 app.get("/ranking", (req, res) => {
   db.all(
     `
@@ -151,6 +122,27 @@ app.get("/ranking", (req, res) => {
       }
 
       res.json(rows);
+    }
+  );
+});
+
+/* 🔥 MELHOR SCORE INDIVIDUAL (IMPORTANTE PRO SEU PRINT 👇) */
+app.get("/best/:name", (req, res) => {
+  const { name } = req.params;
+
+  db.get(
+    `
+    SELECT MAX(score) as best
+    FROM ranking
+    WHERE name = ?
+    `,
+    [name],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: "Erro ao buscar melhor score" });
+      }
+
+      res.json({ best: row.best || 0 });
     }
   );
 });
