@@ -7,6 +7,7 @@ let timeLeft = 10;
 let timerInterval;
 let lives = 3;
 
+/* 🔹 AO CARREGAR */
 window.onload = async () => {
   const savedName = localStorage.getItem("playerName");
 
@@ -16,12 +17,40 @@ window.onload = async () => {
     document.getElementById("start").classList.add("hidden");
     document.getElementById("quiz").classList.remove("hidden");
 
-    await updateUserInfo();
+    showUserBasic(); // 🔥 não mostra 0
     startGameAuto();
   }
 };
 
-/* 🔹 INICIO AUTOMÁTICO */
+/* 🔹 MOSTRA NOME (SEM BEST NO INÍCIO) */
+function showUserBasic(){
+  document.getElementById("user-info").innerText = `👋 ${playerName}`;
+}
+
+/* 🔹 ATUALIZA BEST (SERVER + LOCAL) */
+async function updateUserInfo(){
+  const div = document.getElementById("user-info");
+
+  const localBest = parseInt(localStorage.getItem("bestScore")) || 0;
+
+  if(localBest > 0){
+    div.innerText = `👋 ${playerName} | 🏆 Melhor: ${localBest}`;
+  } else {
+    div.innerText = `👋 ${playerName}`;
+  }
+
+  try{
+    const res = await fetch(`/best/${playerName}`);
+    const data = await res.json();
+
+    if(data.best > localBest){
+      localStorage.setItem("bestScore", data.best);
+      div.innerText = `👋 ${playerName} | 🏆 Melhor: ${data.best}`;
+    }
+  }catch{}
+}
+
+/* 🔹 INICIO AUTO */
 async function startGameAuto(){
   const res = await fetch("/quiz");
   questions = await res.json();
@@ -48,7 +77,7 @@ async function startGame(){
   document.getElementById("start").classList.add("hidden");
   document.getElementById("quiz").classList.remove("hidden");
 
-  await updateUserInfo();
+  showUserBasic();
 
   const res = await fetch("/quiz");
   questions = await res.json();
@@ -61,19 +90,6 @@ async function startGame(){
   loadQuestion();
 }
 
-/* 🔥 AGORA PEGA MELHOR SCORE DO SERVIDOR */
-async function updateUserInfo(){
-  try{
-    const res = await fetch(`/best/${playerName}`);
-    const data = await res.json();
-
-    const div = document.getElementById("user-info");
-    div.innerText = `👋 ${playerName} | 🏆 Melhor: ${data.best}`;
-  }catch{
-    document.getElementById("user-info").innerText = `👋 ${playerName}`;
-  }
-}
-
 /* 🔹 VIDAS */
 function updateLives(){
   const livesDiv = document.getElementById("lives");
@@ -84,9 +100,9 @@ function updateLives(){
   livesDiv.innerText = hearts;
 }
 
-/* 🔹 TIMER (CORRIGIDO) */
+/* 🔹 TIMER */
 function startTimer() {
-  clearInterval(timerInterval); // evita bug
+  clearInterval(timerInterval);
 
   const bar = document.getElementById("timer-bar");
 
@@ -173,7 +189,7 @@ function answer(isCorrect, clickedBtn){
   }, 800);
 }
 
-/* 🔥 FINAL DO JOGO (CORRIGIDO) */
+/* 🔥 FINAL DO JOGO */
 async function finishGame(){
   clearInterval(timerInterval);
 
@@ -182,17 +198,23 @@ async function finishGame(){
 
   document.getElementById("score").innerText = `Pontuação: ${score}`;
 
-  /* salva score */
+  /* 🔥 salva no banco */
   await fetch("/save-score", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ name: playerName, score })
   });
 
-  /* atualiza melhor score */
+  /* 🔥 salva local */
+  let best = parseInt(localStorage.getItem("bestScore")) || 0;
+  if(score > best){
+    localStorage.setItem("bestScore", score);
+  }
+
+  /* 🔥 atualiza UI */
   await updateUserInfo();
 
-  /* ranking */
+  /* 🔥 ranking */
   const res = await fetch("/ranking");
   const ranking = await res.json();
 
@@ -214,6 +236,7 @@ async function finishGame(){
 /* 🔹 LOGOUT */
 function logout(){
   localStorage.removeItem("playerName");
+  localStorage.removeItem("bestScore");
   location.reload();
 }
 
