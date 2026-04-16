@@ -60,7 +60,7 @@ app.get("/quiz", async (req, res) => {
   }
 });
 
-/* 🔹 LOGIN (APENAS VALIDA NOME) */
+/* 🔹 LOGIN (SÓ VALIDA) */
 app.post("/login", (req, res) => {
   const { name } = req.body;
 
@@ -74,7 +74,7 @@ app.post("/login", (req, res) => {
   res.json({ success: true });
 });
 
-/* 🔹 SALVAR SCORE (AGORA PERMITE VÁRIAS TENTATIVAS) */
+/* 🔥 SALVAR SCORE (COMPATÍVEL COM UNIQUE) */
 app.post("/save-score", (req, res) => {
   const { name, score } = req.body;
 
@@ -85,31 +85,52 @@ app.post("/save-score", (req, res) => {
     });
   }
 
-  db.run(
-    "INSERT INTO ranking (name, score) VALUES (?, ?)",
-    [name, score],
-    function (err) {
+  db.get(
+    "SELECT score FROM ranking WHERE name = ?",
+    [name],
+    (err, row) => {
 
       if (err) {
-        console.error("Erro ao salvar score:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Erro ao salvar score"
-        });
+        console.error(err);
+        return res.status(500).json({ success: false });
       }
 
-      res.json({ success: true });
+      // 👉 não existe → cria
+      if (!row) {
+        db.run(
+          "INSERT INTO ranking (name, score) VALUES (?, ?)",
+          [name, score],
+          (err) => {
+            if (err) return res.status(500).json({ success: false });
+            res.json({ success: true });
+          }
+        );
+      } 
+      // 👉 existe → atualiza só se for maior
+      else if (score > row.score) {
+        db.run(
+          "UPDATE ranking SET score = ? WHERE name = ?",
+          [score, name],
+          (err) => {
+            if (err) return res.status(500).json({ success: false });
+            res.json({ success: true });
+          }
+        );
+      } 
+      // 👉 menor → ignora
+      else {
+        res.json({ success: true });
+      }
     }
   );
 });
 
-/* 🔥 RANKING (PEGANDO MELHOR SCORE REAL) */
+/* 🔥 RANKING (AGORA SIMPLES E CORRETO) */
 app.get("/ranking", (req, res) => {
   db.all(
     `
-    SELECT name, MAX(score) as score
+    SELECT name, score
     FROM ranking
-    GROUP BY name
     ORDER BY score DESC
     LIMIT 10
     `,
@@ -126,13 +147,13 @@ app.get("/ranking", (req, res) => {
   );
 });
 
-/* 🔥 MELHOR SCORE INDIVIDUAL (IMPORTANTE PRO SEU PRINT 👇) */
+/* 🔥 MELHOR SCORE INDIVIDUAL */
 app.get("/best/:name", (req, res) => {
   const { name } = req.params;
 
   db.get(
     `
-    SELECT MAX(score) as best
+    SELECT score as best
     FROM ranking
     WHERE name = ?
     `,
@@ -142,7 +163,7 @@ app.get("/best/:name", (req, res) => {
         return res.status(500).json({ error: "Erro ao buscar melhor score" });
       }
 
-      res.json({ best: row.best || 0 });
+      res.json({ best: row ? row.best : 0 });
     }
   );
 });
