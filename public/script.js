@@ -12,12 +12,16 @@ window.onload = async () => {
 
   if(savedName){
     playerName = savedName;
+
     document.getElementById("start").classList.add("hidden");
     document.getElementById("quiz").classList.remove("hidden");
+
+    await updateUserInfo();
     startGameAuto();
   }
 };
 
+/* 🔹 INICIO AUTOMÁTICO */
 async function startGameAuto(){
   const res = await fetch("/quiz");
   questions = await res.json();
@@ -27,12 +31,12 @@ async function startGameAuto(){
   lives = 3;
 
   updateLives();
-  updateUserInfo();
   loadQuestion();
 }
 
+/* 🔹 INICIO MANUAL */
 async function startGame(){
-  playerName = document.getElementById("name").value;
+  playerName = document.getElementById("name").value.trim();
 
   if(!playerName){
     alert("Digite seu nome");
@@ -40,6 +44,11 @@ async function startGame(){
   }
 
   localStorage.setItem("playerName", playerName);
+
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+
+  await updateUserInfo();
 
   const res = await fetch("/quiz");
   questions = await res.json();
@@ -49,20 +58,23 @@ async function startGame(){
   lives = 3;
 
   updateLives();
-  updateUserInfo();
-
-  document.getElementById("start").classList.add("hidden");
-  document.getElementById("quiz").classList.remove("hidden");
-
   loadQuestion();
 }
 
-function updateUserInfo(){
-  const div = document.getElementById("user-info");
-  const best = localStorage.getItem("bestScore") || 0;
-  div.innerText = `👋 ${playerName} | 🏆 Melhor: ${best}`;
+/* 🔥 AGORA PEGA MELHOR SCORE DO SERVIDOR */
+async function updateUserInfo(){
+  try{
+    const res = await fetch(`/best/${playerName}`);
+    const data = await res.json();
+
+    const div = document.getElementById("user-info");
+    div.innerText = `👋 ${playerName} | 🏆 Melhor: ${data.best}`;
+  }catch{
+    document.getElementById("user-info").innerText = `👋 ${playerName}`;
+  }
 }
 
+/* 🔹 VIDAS */
 function updateLives(){
   const livesDiv = document.getElementById("lives");
 
@@ -72,7 +84,10 @@ function updateLives(){
   livesDiv.innerText = hearts;
 }
 
+/* 🔹 TIMER (CORRIGIDO) */
 function startTimer() {
+  clearInterval(timerInterval); // evita bug
+
   const bar = document.getElementById("timer-bar");
 
   timeLeft = 10;
@@ -99,7 +114,10 @@ function startTimer() {
   }, 1000);
 }
 
+/* 🔹 CARREGAR PERGUNTA */
 function loadQuestion(){
+  clearInterval(timerInterval);
+
   const q = questions[current];
 
   if(!q){
@@ -127,6 +145,7 @@ function loadQuestion(){
   startTimer();
 }
 
+/* 🔹 RESPONDER */
 function answer(isCorrect, clickedBtn){
   clearInterval(timerInterval);
 
@@ -143,7 +162,7 @@ function answer(isCorrect, clickedBtn){
     updateLives();
 
     if(lives <= 0){
-      setTimeout(() => finishGame(), 1000);
+      setTimeout(() => finishGame(), 800);
       return;
     }
   }
@@ -151,26 +170,29 @@ function answer(isCorrect, clickedBtn){
   setTimeout(() => {
     current++;
     loadQuestion();
-  }, 1000);
+  }, 800);
 }
 
+/* 🔥 FINAL DO JOGO (CORRIGIDO) */
 async function finishGame(){
+  clearInterval(timerInterval);
+
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("result").classList.remove("hidden");
 
   document.getElementById("score").innerText = `Pontuação: ${score}`;
 
-  let best = localStorage.getItem("bestScore") || 0;
-  if(score > best){
-    localStorage.setItem("bestScore", score);
-  }
-
+  /* salva score */
   await fetch("/save-score", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ name: playerName, score })
   });
 
+  /* atualiza melhor score */
+  await updateUserInfo();
+
+  /* ranking */
   const res = await fetch("/ranking");
   const ranking = await res.json();
 
@@ -189,11 +211,13 @@ async function finishGame(){
   });
 }
 
+/* 🔹 LOGOUT */
 function logout(){
-  localStorage.clear();
+  localStorage.removeItem("playerName");
   location.reload();
 }
 
+/* 🔹 WHATSAPP */
 function compartilharWhatsApp() {
   const mensagem = `🔥 Eu fiz ${score} pontos no Quiz Bíblico!\n👉 ${window.location.origin}`;
   const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
