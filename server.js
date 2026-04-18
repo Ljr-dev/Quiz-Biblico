@@ -1,7 +1,19 @@
 const express = require("express");
-const db = require("./db");
+const sqlite3 = require("sqlite3").verbose();
 
 const app = express();
+
+/* 🔥 BANCO */
+const db = new sqlite3.Database("./quiz.db");
+
+/* 🔥 GARANTE TABELA COM UNIQUE */
+db.run(`
+  CREATE TABLE IF NOT EXISTS ranking (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE,
+    score INTEGER
+  )
+`);
 
 app.use(express.json());
 app.use(express.static("public"));
@@ -60,9 +72,9 @@ app.get("/quiz", async (req, res) => {
   }
 });
 
-/* 🔹 LOGIN (SÓ VALIDA) */
+/* 🔹 LOGIN */
 app.post("/login", (req, res) => {
-  const { name } = req.body;
+  let { name } = req.body;
 
   if (!name || name.trim() === "") {
     return res.status(400).json({
@@ -71,12 +83,14 @@ app.post("/login", (req, res) => {
     });
   }
 
-  res.json({ success: true });
+  name = name.trim().toLowerCase();
+
+  res.json({ success: true, name });
 });
 
-/* 🔥 SALVAR SCORE (COMPATÍVEL COM UNIQUE) */
+/* 🔥 SALVAR SCORE (UPSERT PERFEITO) */
 app.post("/save-score", (req, res) => {
-  const { name, score } = req.body;
+  let { name, score } = req.body;
 
   if (!name || score === undefined) {
     return res.status(400).json({
@@ -85,47 +99,33 @@ app.post("/save-score", (req, res) => {
     });
   }
 
-  db.get(
-    "SELECT score FROM ranking WHERE name = ?",
-    [name],
-    (err, row) => {
+  name = name.trim().toLowerCase();
 
+  db.run(
+    `
+    INSERT INTO ranking (name, score)
+    VALUES (?, ?)
+    ON CONFLICT(name)
+    DO UPDATE SET score = 
+      CASE 
+        WHEN excluded.score > ranking.score 
+        THEN excluded.score 
+        ELSE ranking.score 
+      END
+    `,
+    [name, score],
+    (err) => {
       if (err) {
-        console.error(err);
+        console.error("Erro ao salvar score:", err);
         return res.status(500).json({ success: false });
       }
 
-      // 👉 não existe → cria
-      if (!row) {
-        db.run(
-          "INSERT INTO ranking (name, score) VALUES (?, ?)",
-          [name, score],
-          (err) => {
-            if (err) return res.status(500).json({ success: false });
-            res.json({ success: true });
-          }
-        );
-      } 
-      // 👉 existe → atualiza só se for maior
-      else if (score > row.score) {
-        db.run(
-          "UPDATE ranking SET score = ? WHERE name = ?",
-          [score, name],
-          (err) => {
-            if (err) return res.status(500).json({ success: false });
-            res.json({ success: true });
-          }
-        );
-      } 
-      // 👉 menor → ignora
-      else {
-        res.json({ success: true });
-      }
+      res.json({ success: true });
     }
   );
 });
 
-/* 🔥 RANKING (AGORA SIMPLES E CORRETO) */
+/* 🔥 RANKING */
 app.get("/ranking", (req, res) => {
   db.all(
     `
@@ -147,9 +147,11 @@ app.get("/ranking", (req, res) => {
   );
 });
 
-/* 🔥 MELHOR SCORE INDIVIDUAL */
+/* 🔥 MELHOR SCORE */
 app.get("/best/:name", (req, res) => {
-  const { name } = req.params;
+  let { name } = req.params;
+
+  name = name.trim().toLowerCase();
 
   db.get(
     `
@@ -173,7 +175,9 @@ app.get("/", (req, res) => {
   res.send("🚀 Servidor do Quiz rodando");
 });
 
-/* 🔹 START SERVER */
+
+
+/* 🔹 START */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

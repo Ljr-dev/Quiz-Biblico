@@ -15,22 +15,21 @@
   <!-- INÍCIO -->
   <div id="start" class="card">
     <input id="name" placeholder="Digite seu nome" />
+
     <button onclick="startGame()">Começar</button>
 
-    <button onclick="logout()" class="btn-logout">
-      Trocar usuário
+    <button onclick="logout()" class="btn-logout" style="display:none;">
+      🔄 Trocar usuário
     </button>
   </div>
 
   <!-- QUIZ -->
   <div id="quiz" class="card hidden">
 
-    <!-- 👤 USUÁRIO -->
     <div id="user-info"></div>
 
     <div id="timer-bar"></div>
 
-    <!-- ❤️ VIDAS -->
     <div id="lives" class="lives"></div>
 
     <h2 id="question"></h2>
@@ -40,10 +39,11 @@
   <!-- RESULTADO -->
   <div id="result" class="card hidden">
     <h2 id="score"></h2>
+
     <h3>🏆 Ranking</h3>
     <ul id="ranking"></ul>
 
-    <button onclick="location.reload()">Jogar novamente</button>
+    <button onclick="restartGame()">Jogar novamente</button>
 
     <button onclick="compartilharWhatsApp()" class="btn-whatsapp">
       📲 Compartilhar no WhatsApp
