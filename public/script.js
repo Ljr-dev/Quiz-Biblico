@@ -7,6 +7,14 @@ let timeLeft = 10;
 let timerInterval;
 let lives = 3;
 
+/* 🔥 FORMATAR NOME (PROFISSIONAL) */
+function formatName(name){
+  return name
+    .split(" ")
+    .map(n => n.charAt(0).toUpperCase() + n.slice(1))
+    .join(" ");
+}
+
 /* 🔹 AO CARREGAR */
 window.onload = async () => {
   const savedName = localStorage.getItem("playerName");
@@ -20,37 +28,38 @@ window.onload = async () => {
     document.getElementById("start").classList.add("hidden");
     document.getElementById("quiz").classList.remove("hidden");
 
-    showUserBasic();
+    await updateUserInfo();
     startGameAuto();
   } else {
     logoutBtn.style.display = "none";
   }
 };
 
-/* 🔹 MOSTRA NOME */
+/* 🔹 MOSTRA USUÁRIO */
 function showUserBasic() {
-  document.getElementById("user-info").innerText = `👋 ${playerName}`;
+  document.getElementById("user-info").innerText = `👋 ${formatName(playerName)}`;
 }
 
-/* 🔹 ATUALIZA MELHOR SCORE */
+/* 🔥 ATUALIZA MELHOR SCORE (SEM BUG) */
 async function updateUserInfo() {
   const div = document.getElementById("user-info");
 
-  const localBest = parseInt(localStorage.getItem("bestScore")) || 0;
-
-  if (localBest > 0) {
-    div.innerText = `👋 ${playerName} | 🏆 Melhor: ${localBest}`;
-  }
+  div.innerText = `👋 ${formatName(playerName)}`;
 
   try {
     const res = await fetch(`/best/${playerName}`);
     const data = await res.json();
 
-    if (data.best > localBest) {
-      localStorage.setItem("bestScore", data.best);
-      div.innerText = `👋 ${playerName} | 🏆 Melhor: ${data.best}`;
+    const best = data.best || 0;
+
+    localStorage.setItem("bestScore", best);
+
+    if (best > 0) {
+      div.innerText = `👋 ${formatName(playerName)} | 🏆 Melhor: ${best}`;
     }
-  } catch {}
+  } catch {
+    console.log("Erro ao buscar score");
+  }
 }
 
 /* 🔹 INICIO AUTO */
@@ -78,7 +87,7 @@ async function startGame() {
   document.getElementById("start").classList.add("hidden");
   document.getElementById("quiz").classList.remove("hidden");
 
-  showUserBasic();
+  await updateUserInfo();
 
   const res = await fetch("/quiz");
   questions = await res.json();
@@ -205,11 +214,6 @@ async function finishGame() {
     body: JSON.stringify({ name: playerName, score })
   });
 
-  let best = parseInt(localStorage.getItem("bestScore")) || 0;
-  if (score > best) {
-    localStorage.setItem("bestScore", score);
-  }
-
   await updateUserInfo();
 
   const res = await fetch("/ranking");
@@ -221,7 +225,9 @@ async function finishGame() {
   ranking.forEach((p, i) => {
     const medal = ["🥇","🥈","🥉"][i] || "";
     const li = document.createElement("li");
-    li.innerText = `${medal} ${p.name} - ${p.score}`;
+
+    li.innerText = `${medal} ${formatName(p.name)} - ${p.score}`;
+
     list.appendChild(li);
   });
 }
@@ -234,7 +240,7 @@ function restartGame() {
   startGameAuto();
 }
 
-/* 🔹 LOGOUT (AGORA PROFISSIONAL) */
+/* 🔹 LOGOUT */
 function logout() {
   localStorage.removeItem("playerName");
   localStorage.removeItem("bestScore");
