@@ -1,4 +1,5 @@
-let current = 0;
+
+  let current = 0;
 let score = 0;
 let questions = [];
 let playerName = "";
@@ -7,7 +8,6 @@ let timeLeft = 10;
 let timerInterval;
 let lives = 3;
 
-/* 🔥 FORMATAR NOME (PROFISSIONAL) */
 function formatName(name){
   return name
     .split(" ")
@@ -15,7 +15,6 @@ function formatName(name){
     .join(" ");
 }
 
-/* 🔹 AO CARREGAR */
 window.onload = async () => {
   const savedName = localStorage.getItem("playerName");
   const logoutBtn = document.querySelector(".btn-logout");
@@ -35,19 +34,17 @@ window.onload = async () => {
   }
 };
 
-/* 🔹 MOSTRA USUÁRIO */
 function showUserBasic() {
   document.getElementById("user-info").innerText = `👋 ${formatName(playerName)}`;
 }
 
-/* 🔥 ATUALIZA MELHOR SCORE (SEM BUG) */
 async function updateUserInfo() {
   const div = document.getElementById("user-info");
 
   div.innerText = `👋 ${formatName(playerName)}`;
 
   try {
-    const res = await fetch(`/best/${playerName}`);
+    const res = await fetch(`best/${playerName}`);
     const data = await res.json();
 
     const best = data.best || 0;
@@ -62,16 +59,14 @@ async function updateUserInfo() {
   }
 }
 
-/* 🔹 INICIO AUTO */
 async function startGameAuto() {
-  const res = await fetch("/quiz");
+  const res = await fetch("quiz");
   questions = await res.json();
 
   resetGame();
   loadQuestion();
 }
 
-/* 🔹 INICIO MANUAL */
 async function startGame() {
   playerName = document.getElementById("name").value.trim();
 
@@ -89,14 +84,13 @@ async function startGame() {
 
   await updateUserInfo();
 
-  const res = await fetch("/quiz");
+  const res = await fetch("quiz");
   questions = await res.json();
 
   resetGame();
   loadQuestion();
 }
 
-/* 🔹 RESET */
 function resetGame() {
   current = 0;
   score = 0;
@@ -104,13 +98,11 @@ function resetGame() {
   updateLives();
 }
 
-/* 🔹 VIDAS */
 function updateLives() {
   const livesDiv = document.getElementById("lives");
   livesDiv.innerText = "❤️ ".repeat(lives);
 }
 
-/* 🔹 TIMER */
 function startTimer() {
   clearInterval(timerInterval);
 
@@ -140,7 +132,6 @@ function startTimer() {
   }, 1000);
 }
 
-/* 🔹 PERGUNTA */
 function loadQuestion() {
   clearInterval(timerInterval);
 
@@ -173,7 +164,6 @@ function loadQuestion() {
   startTimer();
 }
 
-/* 🔹 RESPONDER */
 function answer(isCorrect, btn) {
   clearInterval(timerInterval);
 
@@ -199,7 +189,6 @@ function answer(isCorrect, btn) {
   }, 800);
 }
 
-/* 🔥 FINAL */
 async function finishGame() {
   clearInterval(timerInterval);
 
@@ -208,7 +197,7 @@ async function finishGame() {
 
   document.getElementById("score").innerText = `Pontuação: ${score}`;
 
-  await fetch("/save-score", {
+  await fetch("save-score", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ name: playerName, score })
@@ -216,7 +205,7 @@ async function finishGame() {
 
   await updateUserInfo();
 
-  const res = await fetch("/ranking");
+  const res = await fetch("ranking");
   const ranking = await res.json();
 
   const list = document.getElementById("ranking");
@@ -232,7 +221,6 @@ async function finishGame() {
   });
 }
 
-/* 🔹 RESTART */
 function restartGame() {
   document.getElementById("result").classList.add("hidden");
   document.getElementById("quiz").classList.remove("hidden");
@@ -240,7 +228,6 @@ function restartGame() {
   startGameAuto();
 }
 
-/* 🔹 LOGOUT */
 function logout() {
   localStorage.removeItem("playerName");
   localStorage.removeItem("bestScore");
@@ -256,8 +243,7 @@ function logout() {
   document.getElementById("name").value = "";
 }
 
-/* 🔹 WHATSAPP */
 function compartilharWhatsApp() {
-  const msg = `🔥 Fiz ${score} pontos no Quiz Bíblico!\n👉 ${window.location.origin}`;
+  const msg = `🔥 Fiz ${score} pontos no Quiz Bíblico!\n👉 ${window.location.href}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
-}
+}  
